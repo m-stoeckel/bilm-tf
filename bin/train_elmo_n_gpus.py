@@ -85,6 +85,5 @@ if __name__ == '__main__':
     parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
     parser.add_argument('--min_count', help='The minimal count for a vocabulary item.', type=int, default=5)
 
-
     args = parser.parse_args()
     main(args)
