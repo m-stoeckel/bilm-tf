@@ -1,5 +1,4 @@
 import argparse
-import sys
 
 from bin.train_elmo_n_gpus import pre_process
 
