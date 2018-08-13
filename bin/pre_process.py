@@ -66,9 +66,26 @@ def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, n_slices
     curr_file.close()
     del curr_buffer
 
-    print("Writing vocabulary..")
     n_vocab = write_vocab(freq, min_count, vocab_file)
 
+    gen_heldout(heldout_path, heldout_name, train_name)
+
+    print("Writings stats..")
+    with open(train_corpus + ".stat", 'w', encoding='utf8') as f_out:
+        f_out.write("n_tokens:" + str(n_tokens) + "\n")
+        f_out.write("n_vocab:" + str(n_vocab) + "\n")
+
+    print("n_lines:" + str(n_lines))
+    print("n_tokens:" + str(n_tokens))
+    print("n_vocab:" + str(n_vocab))
+
+    del freq
+
+    print("Finished pre-processing.")
+    return n_tokens
+
+
+def gen_heldout(heldout_path, heldout_name, train_name):
     print("Writing heldout..")
     with open(os.path.join(heldout_path, train_name + ".0"), 'r', encoding='utf8') as f_in:
         heldout = []
@@ -97,22 +114,9 @@ def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, n_slices
         curr_file.close()
         del heldout
 
-    print("Writings stats..")
-    with open(train_corpus + ".stat", 'w', encoding='utf8') as f_out:
-        f_out.write("n_tokens:" + str(n_tokens) + "\n")
-        f_out.write("n_vocab:" + str(n_vocab) + "\n")
-
-    print("n_lines:" + str(n_lines))
-    print("n_tokens:" + str(n_tokens))
-    print("n_vocab:" + str(n_vocab))
-
-    del freq
-
-    print("Finished pre-processing.")
-    return n_tokens
-
 
 def write_vocab(freq, min_count, vocab_file):
+    print("Writing vocabulary..")
     n_vocab = np.ulonglong(0)
     with open(vocab_file, 'w', encoding='utf8') as f_out:
         f_out.write("<S>\n")
@@ -164,12 +168,16 @@ def main(args):
         pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix, args.min_count)
     elif args.gen_vocab:
         gen_vocab(args.gen_vocab, args.vocab_file, args.min_count)
+    elif args.gen_heldout:
+        gen_heldout(os.path.split(args.heldout_prefix)[0], os.path.split(args.heldout_prefix)[1],
+                    os.path.split(args.train_prefix)[1])
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--pre_process', help='The corpus to pre-process.')
     parser.add_argument('--gen_vocab', help='Only generate the vocabulary of this corpus, no training data.')
+    parser.add_argument('--gen_heldout', help='Only generate the heldout of a given training slice.')
     parser.add_argument('--train_prefix', help='Prefix for train files')
     parser.add_argument('--vocab_file', help='Vocabulary file')
     parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
