@@ -18,47 +18,47 @@ def blocks(files, size=65536):
         yield b
 
 
-def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
-    file_name = os.path.split(file_in)[1]
+def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=100):
+    train_path, train_name = os.path.split(train_prefix)
+    model_path, model_name = os.path.split(train_model)
+    heldout_path, heldout_name = os.path.split(heldout_prefix)
+
+    if train_name == "*":
+        train_name = model_name
 
     freq = {}
     curr_buffer = []
-    heldout = []
 
     # Source: https://stackoverflow.com/a/9631635
     print("Counting lines..")
-    with open(file_in, 'r+', encoding="utf8", errors='ignore') as f_in:
+    with open(train_model, 'r+', encoding="utf8", errors='ignore') as f_in:
         n_lines = sum(bl.count("\n") for bl in blocks(f_in))
 
     n_lines_per_slice = n_lines / n_slices
 
     n_tokens = np.ulonglong(0)
     n_vocab = np.ulonglong(0)
-    n_heldout = 0
 
     curr_line = 0
     curr_file_id = 0
-    curr_file = open(os.path.join(path_out.replace("*", ""), file_name + "." + str(curr_file_id)), 'w', encoding='utf8')
+    curr_file = open(os.path.join(heldout_path, train_name + ".0"), 'w', encoding='utf8')
 
     tokenizer = spacy.load('de', disable=['parser', 'tagger', 'ner'])
 
     print("Reading data..")
-    with open(file_in, 'r', encoding="utf8") as f_in:
+    with open(train_model, 'r', encoding="utf8") as f_in:
         for doc in tqdm(tokenizer.pipe(f_in, batch_size=100, n_threads=cpu_count()), total=n_lines):
             tokens = [t.text for t in doc]
             tokenized_line = " ".join(tokens)
             if curr_file_id != int(curr_line / n_lines_per_slice):
                 curr_file.writelines(curr_buffer)
+                curr_file.close()
                 del curr_buffer
                 curr_buffer = []
                 curr_file_id = int(curr_line / n_lines_per_slice)
-                curr_file = open(os.path.join(path_out.replace("*", ""), file_name + "." + str(curr_file_id)), 'w',
-                                 encoding='utf8')
+                curr_file = open(os.path.join(train_path, train_name + "." + str(curr_file_id)), 'w', encoding='utf8')
 
-            if n_heldout < 1000 and curr_line % 1000 == 0:
-                n_heldout += 1
-                heldout.append(tokenized_line)
-            else:
+            if curr_file_id != 0:
                 for token in tokens:
                     if freq.__contains__(token):
                         c = freq[token]
@@ -71,6 +71,7 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
             curr_buffer.append(tokenized_line)
 
     curr_file.writelines(curr_buffer)
+    curr_file.close()
     del curr_buffer
 
     print("Writing vocabulary..")
@@ -84,11 +85,35 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
                 n_vocab += 1
 
     print("Writing heldout..")
-    with open(heldout_file, 'w', encoding='utf8') as f_out:
-        f_out.writelines(heldout)
+    with open(os.path.join(heldout_path, train_name + ".0"), 'r', encoding='utf8') as f_in:
+        heldout = []
+
+        curr_heldout_id = 0
+        curr_line = 0
+        curr_file = open(os.path.join(heldout_path, heldout_name + ".0"), 'w', encoding='utf8')
+
+        n_heldout_lines = sum(bl.count("\n") for bl in blocks(f_in))
+        n_lines_per_slice = n_heldout_lines / 50
+
+        for line in f_in:
+            if curr_heldout_id != int(curr_line / n_lines_per_slice):
+                curr_file.writelines(heldout)
+                curr_file.close()
+                del heldout
+                heldout = []
+                curr_heldout_id = int(curr_line / n_lines_per_slice)
+                curr_file = open(os.path.join(heldout_path, heldout_name + "." + str(curr_file_id)), 'w',
+                                 encoding='utf8')
+
+            heldout.append(line)
+            curr_line += 1
+
+        curr_file.writelines(heldout)
+        curr_file.close()
+        del heldout
 
     print("Writings stats..")
-    with open(file_in + ".stat", 'w', encoding='utf8') as f_out:
+    with open(train_model + ".stat", 'w', encoding='utf8') as f_out:
         f_out.write("n_tokens:" + str(n_tokens) + "\n")
         f_out.write("n_vocab:" + str(n_vocab) + "\n")
 
@@ -97,7 +122,6 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
     print("n_vocab:" + str(n_vocab))
 
     del freq
-    del heldout
 
     print("Finished pre-processing.")
     return n_tokens
@@ -169,17 +193,20 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--train_prefix', help='Prefix for train files')
     parser.add_argument('--save_dir', help='Location of checkpoint files')
     parser.add_argument('--vocab_file', help='Vocabulary file')
-    parser.add_argument('--heldout', help='Heldout file')
-    parser.add_argument('--train_prefix', help='Prefix for train files')
-    parser.add_argument('--n_tokens', help='The number of tokens in the training files')
-    parser.add_argument('--pre_process', help='The not pre-processed training file')
+
+    parser.add_argument('--pre_process', help='The model to pre-process.')
+    parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
+
     parser.add_argument('--use_gpus', help='The number of gpus to use', type=int, default=2)
     parser.add_argument('--epochs', help='The number of epochs to run', type=int, default=10)
     parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=128)
     parser.add_argument('--min_count', help='The minimal count for a vocabulary item.', type=int, default=5)
+
     parser.add_argument('--stats', help='Use a .stat file for input data statistics, like token count.')
+    parser.add_argument('--n_tokens', help='The number of tokens in the training files')
 
     args = parser.parse_args()
     main(args)
