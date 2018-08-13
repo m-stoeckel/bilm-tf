@@ -1,6 +1,6 @@
 import argparse
 import operator
-import os
+import os, errno
 
 import numpy as np
 import spacy
@@ -19,9 +19,16 @@ def blocks(files, size=65536):
 
 
 def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=100):
-    train_path, train_name = os.path.split(train_prefix)
     model_path, model_name = os.path.split(train_model)
+    train_path, train_name = os.path.split(train_prefix)
     heldout_path, heldout_name = os.path.split(heldout_prefix)
+
+    for directory in [train_path, heldout_path]:
+        try:
+            os.makedirs(directory)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
     if train_name == "*":
         train_name = model_name
@@ -129,7 +136,7 @@ def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=
 
 def main(args):
     if args.pre_process:
-        n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout)
+        n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix)
     elif args.n_tokens:
         n_train_tokens = args.n_tokens
     elif args.stat:
