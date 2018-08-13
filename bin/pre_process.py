@@ -97,7 +97,7 @@ def gen_heldout(heldout_path, heldout_name, train_name):
         n_heldout_lines = sum(bl.count("\n") for bl in blocks(f_in))
         n_lines_per_slice = n_heldout_lines / 50
 
-        for line in f_in:
+        for line in tqdm(f_in, total=n_heldout_lines):
             if curr_heldout_id != int(curr_line / n_lines_per_slice):
                 curr_file.writelines(heldout)
                 curr_file.close()
