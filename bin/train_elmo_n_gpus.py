@@ -202,7 +202,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_dir', help='Location of checkpoint files')
     parser.add_argument('--vocab_file', help='Vocabulary file')
 
-    parser.add_argument('--pre_process', help='The model to pre-process.')
+    parser.add_argument('--pre_process', help='The corpus to pre-process.')
     parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
 
     parser.add_argument('--use_gpus', help='The number of gpus to use', type=int, default=2)

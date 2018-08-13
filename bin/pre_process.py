@@ -9,7 +9,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pre_process', help='The model to pre-process.')
+    parser.add_argument('--pre_process', help='The corpus to pre-process.')
     parser.add_argument('--train_prefix', help='Prefix for train files')
     parser.add_argument('--vocab_file', help='Vocabulary file')
     parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
