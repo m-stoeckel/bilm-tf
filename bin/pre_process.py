@@ -87,6 +87,7 @@ def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, n_slices
 
 def gen_heldout(heldout_path, heldout_name, train_name):
     print("Writing heldout..")
+    n_heldout_lines = count_lines(os.path.join(heldout_path, train_name + ".0"))
     with open(os.path.join(heldout_path, train_name + ".0"), 'r', encoding='utf8') as f_in:
         heldout = []
 
@@ -96,7 +97,6 @@ def gen_heldout(heldout_path, heldout_name, train_name):
         print("Writing " + os.path.join(heldout_path, heldout_name + ".0"))
         curr_file = open(os.path.join(heldout_path, heldout_name + ".0"), 'w', encoding='utf8')
 
-        n_heldout_lines = sum(bl.count("\n") for bl in blocks(f_in))
         n_lines_per_slice = n_heldout_lines / 50
 
         for line in tqdm(f_in, total=n_heldout_lines):
