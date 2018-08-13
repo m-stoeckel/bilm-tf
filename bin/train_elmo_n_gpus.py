@@ -74,17 +74,17 @@ if __name__ == '__main__':
     parser.add_argument('--train_prefix', help='Prefix for train files')
     parser.add_argument('--save_dir', help='Location of checkpoint files')
     parser.add_argument('--vocab_file', help='Vocabulary file')
-
-    parser.add_argument('--pre_process', help='The corpus to pre-process.')
-    parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
+    parser.add_argument('--n_tokens', help='The number of tokens in the training files')
+    parser.add_argument('--stats', help='Use a .stat file for input data statistics, like token count.')
 
     parser.add_argument('--use_gpus', help='The number of gpus to use', type=int, default=2)
     parser.add_argument('--epochs', help='The number of epochs to run', type=int, default=10)
     parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=128)
+
+    parser.add_argument('--pre_process', help='The corpus to pre-process.')
+    parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
     parser.add_argument('--min_count', help='The minimal count for a vocabulary item.', type=int, default=5)
 
-    parser.add_argument('--stats', help='Use a .stat file for input data statistics, like token count.')
-    parser.add_argument('--n_tokens', help='The number of tokens in the training files')
 
     args = parser.parse_args()
     main(args)

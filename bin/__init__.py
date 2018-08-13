@@ -1,1 +1,1 @@
-from .train_elmo_n_gpus import pre_process, blocks
+from .pre_process import pre_process
