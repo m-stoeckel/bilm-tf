@@ -104,7 +104,7 @@ def gen_heldout(heldout_path, heldout_name, train_name):
                 del heldout
                 heldout = []
                 curr_heldout_id = int(curr_line / n_lines_per_slice)
-                curr_file = open(os.path.join(heldout_path, heldout_name + "." + str(curr_file_id)), 'w',
+                curr_file = open(os.path.join(heldout_path, heldout_name + "." + str(curr_heldout_id)), 'w',
                                  encoding='utf8')
 
             heldout.append(line)
