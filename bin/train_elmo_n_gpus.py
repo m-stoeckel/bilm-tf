@@ -18,7 +18,7 @@ def blocks(files, size=65536):
         yield b
 
 
-def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=100):
+def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=100, min_count=5):
     model_path, model_name = os.path.split(train_model)
     train_path, train_name = os.path.split(train_prefix)
     heldout_path, heldout_name = os.path.split(heldout_prefix)
@@ -87,7 +87,7 @@ def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=
         f_out.write("</S>\n")
         f_out.write("<UNK>\n")
         for token, count in tqdm(sorted(freq.items(), key=operator.itemgetter(1), reverse=True)):
-            if count >= 5:
+            if count >= min_count:
                 f_out.write(token + '\n')
                 n_vocab += 1
 
@@ -136,7 +136,7 @@ def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=
 
 def main(args):
     if args.pre_process:
-        n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix)
+        n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix, args.min_count)
     elif args.n_tokens:
         n_train_tokens = args.n_tokens
     elif args.stat:
