@@ -5,6 +5,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 from spacy.lang.de import German
+from multiprocessing import cpu_count
 
 from bilm.data import BidirectionalLMDataset
 from bilm.training import train, load_vocab
@@ -43,7 +44,7 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
 
     print("Reading data..")
     with open(file_in, 'r', encoding="utf8") as f_in:
-        for doc in tqdm(tokenizer.pipe(f_in, batch_size=100), total=n_lines):
+        for doc in tqdm(tokenizer.pipe(f_in, batch_size=100, n_threads=cpu_count()), total=n_lines):
             tokens = [t.text for t in doc]
             tokenized_line = " ".join(tokens)
             if curr_file_id != int(curr_line / n_lines_per_slice):
