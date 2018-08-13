@@ -94,7 +94,6 @@ def gen_heldout(heldout_path, heldout_name, train_name):
         curr_heldout_id = 0
         curr_line = 0
 
-        print("Writing " + os.path.join(heldout_path, heldout_name + ".0"))
         curr_file = open(os.path.join(heldout_path, heldout_name + ".0"), 'w', encoding='utf8')
 
         n_lines_per_slice = n_heldout_lines / 50

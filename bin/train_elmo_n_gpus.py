@@ -10,8 +10,8 @@ def main(args):
                                      args.min_count)
     elif args.n_tokens:
         n_train_tokens = args.n_tokens
-    elif args.stat:
-        with open(args.stat, 'r', encoding='utf8') as f_in:
+    elif args.stats:
+        with open(args.stats, 'r', encoding='utf8') as f_in:
             args = dict((key, value) for (key, value) in [line.split(":")[:2] for line in f_in.readlines()])
             n_train_tokens = args.get("n_tokens")
     else:
