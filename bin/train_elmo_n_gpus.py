@@ -4,6 +4,7 @@ import os
 
 import numpy as np
 from tqdm import tqdm
+from spacy.lang.de import German
 
 from bilm.data import BidirectionalLMDataset
 from bilm.training import train, load_vocab
@@ -16,9 +17,8 @@ def blocks(files, size=65536):
         yield b
 
 
-def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=5000):
-    file_name = file_name = os.path.split(file_in)[1]
-#    print(file_name)
+def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
+    file_name = os.path.split(file_in)[1]
 
     freq = {}
     curr_buffer = []
@@ -32,28 +32,33 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=5000):
     n_lines_per_slice = n_lines / n_slices
 
     n_tokens = np.ulonglong(0)
+    n_vocab = np.ulonglong(0)
     n_heldout = 0
 
     curr_line = 0
     curr_file_id = 0
     curr_file = open(os.path.join(path_out.replace("*", ""), file_name + "." + str(curr_file_id)), 'w', encoding='utf8')
-#    print(os.path.join(path_out.replace("*", ""), file_name + "." + str(curr_file_id)))
+
+    tokenizer = German().Defaults.create_tokenizer()
 
     print("Reading data..")
     with open(file_in, 'r', encoding="utf8") as f_in:
-        for line in tqdm(f_in, total=n_lines):
+        for doc in tqdm(tokenizer.pipe(f_in, batch_size=50), total=n_lines):
+            tokens = [t.text for t in doc]
+            tokenized_line = " ".join(tokens)
             if curr_file_id != int(curr_line / n_lines_per_slice):
                 curr_file.writelines(curr_buffer)
                 del curr_buffer
                 curr_buffer = []
                 curr_file_id = int(curr_line / n_lines_per_slice)
-                curr_file = open(os.path.join(path_out.replace("*", ""), file_name + "." + str(curr_file_id)), 'w', encoding='utf8')
+                curr_file = open(os.path.join(path_out.replace("*", ""), file_name + "." + str(curr_file_id)), 'w',
+                                 encoding='utf8')
 
             if n_heldout < 1000 and curr_line % 1000 == 0:
                 n_heldout += 1
-                heldout.append(line)
+                heldout.append(tokenized_line)
             else:
-                for token in line.split():
+                for token in tokens:
                     if freq.__contains__(token):
                         c = freq[token]
                     else:
@@ -62,7 +67,7 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=5000):
                     n_tokens += 1
 
             curr_line += 1
-            curr_buffer.append(line)
+            curr_buffer.append(tokenized_line)
 
     curr_file.writelines(curr_buffer)
     del curr_buffer
@@ -73,19 +78,25 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=5000):
         f_out.write("</S>\n")
         f_out.write("<UNK>\n")
         for token, count in tqdm(sorted(freq.items(), key=operator.itemgetter(1), reverse=True)):
-            if count > 4:
+            if count >= 5:
                 f_out.write(token + '\n')
+                n_vocab += 1
 
     print("Writing heldout..")
     with open(heldout_file, 'w', encoding='utf8') as f_out:
         f_out.writelines(heldout)
 
+    print("Writings stats..")
+    with open(file_in + ".stat", 'w', encoding='utf8') as f_out:
+        f_out.write("n_tokens:" + str(n_tokens) + "\n")
+        f_out.write("n_vocab:" + str(n_vocab) + "\n")
+
     print("n_lines:" + str(n_lines))
     print("n_tokens:" + str(n_tokens))
+    print("n_vocab:" + str(n_vocab))
 
     del freq
     del heldout
-    del curr_buffer
 
     print("Finished pre-processing.")
     return n_tokens
@@ -100,8 +111,8 @@ def main(args):
     vocab = load_vocab(args.vocab_file, 50)
 
     # define the options
-    batch_size = 128  # batch size for each GPU
-    n_gpus = int(args.use_gpus)
+    batch_size = args.batchsize  # batch size for each GPU
+    n_gpus = args.use_gpus
 
     options = {
         'bidirectional': True,
@@ -131,7 +142,7 @@ def main(args):
 
         'all_clip_norm_val': 10.0,
 
-        'n_epochs': 100,
+        'n_epochs': args.epochs,
         'n_train_tokens': n_train_tokens,
         'batch_size': batch_size,
         'n_tokens_vocab': vocab.size,
@@ -157,7 +168,10 @@ if __name__ == '__main__':
     parser.add_argument('--train_prefix', help='Prefix for train files')
     parser.add_argument('--n_tokens', help='The number of tokens in the training files')
     parser.add_argument('--pre_process', help='The not pre-processed training file')
-    parser.add_argument('--use_gpus', help='The number of gpus to use')
+    parser.add_argument('--use_gpus', help='The number of gpus to use', type=int, default=2)
+    parser.add_argument('--epochs', help='The number of epochs to run', type=int, default=10)
+    parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=128)
+    parser.add_argument('--min_count', help='The minimal count for a vocabulary item.', type=int, default=5)
 
     args = parser.parse_args()
     main(args)
