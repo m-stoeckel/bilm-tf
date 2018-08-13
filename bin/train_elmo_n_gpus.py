@@ -3,8 +3,8 @@ import operator
 import os
 
 import numpy as np
+import spacy
 from tqdm import tqdm
-from spacy.lang.de import German
 from multiprocessing import cpu_count
 
 from bilm.data import BidirectionalLMDataset
@@ -40,7 +40,7 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
     curr_file_id = 0
     curr_file = open(os.path.join(path_out.replace("*", ""), file_name + "." + str(curr_file_id)), 'w', encoding='utf8')
 
-    tokenizer = German().Defaults.create_tokenizer()
+    tokenizer = spacy.load('de', disable=['parser', 'tagger', 'ner'])
 
     print("Reading data..")
     with open(file_in, 'r', encoding="utf8") as f_in:
