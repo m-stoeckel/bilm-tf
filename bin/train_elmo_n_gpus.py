@@ -43,7 +43,7 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
 
     print("Reading data..")
     with open(file_in, 'r', encoding="utf8") as f_in:
-        for doc in tqdm(tokenizer.pipe(f_in, batch_size=50), total=n_lines):
+        for doc in tqdm(tokenizer.pipe(f_in, batch_size=100), total=n_lines):
             tokens = [t.text for t in doc]
             tokenized_line = " ".join(tokens)
             if curr_file_id != int(curr_line / n_lines_per_slice):
@@ -105,8 +105,14 @@ def pre_process(file_in, path_out, vocab_file, heldout_file, n_slices=100):
 def main(args):
     if args.pre_process:
         n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout)
-    else:
+    elif args.n_tokens:
         n_train_tokens = args.n_tokens
+    elif args.stat:
+        with open(args.stat, 'r', encoding='utf8') as f_in:
+            args = dict((key, value) for (key, value) in [line.split(":")[:2] for line in f_in.readlines()])
+            n_train_tokens = args.get("n_tokens")
+    else:
+        raise ValueError("Missing token number!")
 
     vocab = load_vocab(args.vocab_file, 50)
 
@@ -172,6 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', help='The number of epochs to run', type=int, default=10)
     parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=128)
     parser.add_argument('--min_count', help='The minimal count for a vocabulary item.', type=int, default=5)
+    parser.add_argument('--stats', help='Use a .stat file for input data statistics, like token count.')
 
     args = parser.parse_args()
     main(args)
