@@ -1,11 +1,11 @@
 import argparse
+import errno
 import operator
-import os, errno
+import os
+import re
 
 import numpy as np
-import spacy
 from tqdm import tqdm
-from multiprocessing import cpu_count
 
 from bilm.data import BidirectionalLMDataset
 from bilm.training import train, load_vocab
@@ -50,13 +50,10 @@ def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=
     curr_file_id = 0
     curr_file = open(os.path.join(heldout_path, train_name + ".0"), 'w', encoding='utf8')
 
-    tokenizer = spacy.load('de', disable=['parser', 'tagger', 'ner'])
-
     print("Reading data..")
     with open(train_model, 'r', encoding="utf8") as f_in:
-        for doc in tqdm(tokenizer.pipe(f_in, batch_size=100, n_threads=cpu_count()), total=n_lines):
-            tokens = [t.text for t in doc]
-            tokenized_line = " ".join(tokens)
+        for line in tqdm(f_in, total=n_lines):
+            tokens = line.split()
             if curr_file_id != int(curr_line / n_lines_per_slice):
                 curr_file.writelines(curr_buffer)
                 curr_file.close()
@@ -75,7 +72,7 @@ def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=
                     n_tokens += 1
 
             curr_line += 1
-            curr_buffer.append(tokenized_line)
+            curr_buffer.append(line)
 
     curr_file.writelines(curr_buffer)
     curr_file.close()
@@ -136,7 +133,8 @@ def pre_process(train_model, train_prefix, vocab_file, heldout_prefix, n_slices=
 
 def main(args):
     if args.pre_process:
-        n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix, args.min_count)
+        n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix,
+                                     args.min_count)
     elif args.n_tokens:
         n_train_tokens = args.n_tokens
     elif args.stat:
