@@ -19,6 +19,9 @@ def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, n_slices
     train_path, train_name = os.path.split(train_prefix)
     heldout_path, heldout_name = os.path.split(heldout_prefix)
 
+    train_name = train_name.replace("*")
+    heldout_name = heldout_path.replace("*")
+
     for directory in [train_path, heldout_path]:
         try:
             os.makedirs(directory)
