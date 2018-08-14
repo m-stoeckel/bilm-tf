@@ -131,8 +131,8 @@ class PreProcessor:
             del heldout
 
     def gen_vocab(self):
-        corpus_file = self.options["corpus"]
-        output_path = self.options["output_path"]
+        corpus_file = path.abspath(self.options["corpus"])
+        output_path = path.abspath(self.options["output_path"])
         vocab_prefix = self.options.get("vocab_file", path.join(output_path, path.split(corpus_file)[1]))
         min_count = self.options.get("min_count", {5})
         if min_count is None or min_count == {}:
@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-o', '--output_path', help='Output path. Subdirectories for training and heldout and other output files will be created here.', required=True)
     parser.add_argument('-c', '--corpus', help='The corpus to pre-process.')
-    parser.add_argument('-v', '--vocab_file', help='Vocabulary file name.')
+    parser.add_argument('-v', '--vocab_file', help='Vocabulary file name prefix.')
     parser.add_argument('-s', '--stat_file', help='Corpus statistics file name.')
 
     parser.add_argument('--min_count', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=int, nargs='+', default={5})
