@@ -15,7 +15,7 @@ def blocks(files, size=65536):
 
 
 def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, min_count=None, n_slices=100):
-    if min_count is None:
+    if min_count is None or min_count == {}:
         min_count = {5}
     corpus_path, corpus_path = os.path.split(train_corpus)
     train_path, train_name = os.path.split(train_prefix)
@@ -145,7 +145,7 @@ def count_occurrences(freq, tokens):
 
 
 def gen_vocab(corpus_file, vocab_file, min_count=None):
-    if min_count is None:
+    if min_count is None or min_count == {}:
         min_count = {5}
     # Source: https://stackoverflow.com/a/9631635
     n_lines = count_lines(corpus_file)
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--vocab_file', help='Vocabulary file prefix')
     parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files')
     parser.add_argument('--min_count', help='The minimal count for a vocabulary item', type=int)
-    parser.add_argument('--min_counts', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=int, nargs='+')
+    parser.add_argument('--min_counts', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=int, nargs='+', default={})
 
     args = parser.parse_args()
     main(args)
