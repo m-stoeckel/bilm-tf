@@ -202,6 +202,7 @@ def main(args):
         "train_name": args.train_name,
         "heldout_prefix": args.heldout_prefix
     }
+    opt = {k: v for k, v in opt.items() if v is not None}
     pre_processor.set_options(opt)
     if args.pre_process:
         pre_processor.pre_process()
