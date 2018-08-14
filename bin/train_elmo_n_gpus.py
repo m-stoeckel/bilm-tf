@@ -1,7 +1,7 @@
 import argparse
+
 from bilm.data import BidirectionalLMDataset
 from bilm.training import train, load_vocab
-from bin.pre_process import pre_process
 
 
 def main(args):
