@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--use_gpus', help='The number of gpus to use', type=int, default=2)
     parser.add_argument('--epochs', help='The number of epochs to run', type=int, default=10)
-    parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=1)
+    parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=128)
 
     args = parser.parse_args()
     main(args)
