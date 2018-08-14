@@ -119,6 +119,8 @@ def gen_heldout(heldout_path, heldout_name, train_name):
 
 
 def write_vocab(freq, min_count, vocab_file):
+    if min_count.__contains__(None):
+        min_count.remove(None)
     for min in min_count:
         print("Writing vocabulary with min count " + str(min) + "..")
         n_vocab = np.ulonglong(0)
