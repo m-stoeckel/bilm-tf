@@ -166,9 +166,9 @@ def count_lines(corpus_file):
 
 def main(args):
     if args.pre_process:
-        pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix, set(args.min_counts).union({args.min_count}))
+        pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix, {args.min_count}.union(args.min_counts))
     elif args.gen_vocab:
-        gen_vocab(args.gen_vocab, args.vocab_file, set(args.min_counts).union({args.min_count}))
+        gen_vocab(args.gen_vocab, args.vocab_file, {args.min_count}.union(args.min_counts))
     elif args.gen_heldout:
         gen_heldout(os.path.split(args.heldout_prefix)[0], os.path.split(args.heldout_prefix)[1],
                     os.path.split(args.train_prefix)[1])
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     parser.add_argument('--vocab_file', help='Vocabulary file prefix')
     parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files')
     parser.add_argument('--min_count', help='The minimal count for a vocabulary item', type=int, default=5)
-    parser.add_argument('--min_counts', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=set, nargs='+', default=[5])
+    parser.add_argument('--min_counts', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=int, nargs='+', default={5})
 
     args = parser.parse_args()
     main(args)
