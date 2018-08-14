@@ -22,7 +22,7 @@ def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, min_coun
     heldout_path, heldout_name = os.path.split(heldout_prefix)
 
     train_name = train_name.replace("*", "")
-    heldout_name = heldout_path.replace("*", "")
+    heldout_name = heldout_name.replace("*", "")
 
     for directory in [train_path, heldout_path]:
         try:
