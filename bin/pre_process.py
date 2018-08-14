@@ -14,7 +14,9 @@ def blocks(files, size=65536):
         yield b
 
 
-def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, min_count, n_slices=100):
+def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, min_count=None, n_slices=100):
+    if min_count is None:
+        min_count = {5}
     corpus_path, corpus_path = os.path.split(train_corpus)
     train_path, train_name = os.path.split(train_prefix)
     heldout_path, heldout_name = os.path.split(heldout_prefix)
@@ -142,7 +144,9 @@ def count_occurrences(freq, tokens):
     return count
 
 
-def gen_vocab(corpus_file, vocab_file, min_count):
+def gen_vocab(corpus_file, vocab_file, min_count=None):
+    if min_count is None:
+        min_count = {5}
     # Source: https://stackoverflow.com/a/9631635
     n_lines = count_lines(corpus_file)
 
@@ -182,8 +186,8 @@ if __name__ == '__main__':
     parser.add_argument('--train_prefix', help='Prefix for train files')
     parser.add_argument('--vocab_file', help='Vocabulary file prefix')
     parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files')
-    parser.add_argument('--min_count', help='The minimal count for a vocabulary item', type=int, default=5)
-    parser.add_argument('--min_counts', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=int, nargs='+', default={5})
+    parser.add_argument('--min_count', help='The minimal count for a vocabulary item', type=int)
+    parser.add_argument('--min_counts', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=int, nargs='+')
 
     args = parser.parse_args()
     main(args)
