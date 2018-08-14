@@ -28,7 +28,6 @@ python3 bin/pre-process.py --pre_process /home/data/corpora/corpus_a \
             --vocab_file /home/data/pre/corpus_a.100.vocab \
             --min_count 100
 python3 bin/pre-process.py --gen_vocab /home/data/corpora/corpus_a \
-            --train_prefix '/home/data/pre/corpus_a_training/train.corpus_a*' \
             --vocab_file /home/data/pre/corpus_a.50.vocab \
             --min_count 50
             
@@ -44,9 +43,7 @@ The first training slice is also saved into the directory given by this prefix.
 --min_count: The minimal count of a token to make it into the vocabulary.
 </pre> 
 <p/><b>Training:</b>
-Train the biLM for ELMo embeddings.
-Call with --pre_process to process a corpus first, then train on the generated data.
-Call without if data was already pre-processed.
+Train the biLM for ELMo embeddings on pre-processed data.
 <pre>
 usage: train_elmo_n_gpus.py [-h] [--train_prefix TRAIN_PREFIX]
                             [--save_dir SAVE_DIR] [--vocab_file VOCAB_FILE]
@@ -70,12 +67,6 @@ optional arguments:
   --epochs EPOCHS       The number of epochs to run
   --batchsize BATCHSIZE
                         The batchsize for each gpu
-  --pre_process PRE_PROCESS
-                        The corpus to pre-process.
-  --heldout_prefix HELDOUT_PREFIX
-                        The path and prefix for heldout files.
-  --min_count MIN_COUNT
-                        The minimal count for a vocabulary item.
 Example calls:
 python3 bin/train_elmo_n_gpus.py \
  --train_prefix '/home/public/stoeckel/data/Leipzig40MT2010_raw_training/train.Leipzig40MT2010_raw*' \

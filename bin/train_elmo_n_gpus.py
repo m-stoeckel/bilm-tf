@@ -5,15 +5,12 @@ from bin.pre_process import pre_process
 
 
 def main(args):
-    if args.pre_process:
-        n_train_tokens = pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix,
-                                     args.min_count)
-    elif args.n_tokens:
+    if args.n_tokens:
         n_train_tokens = args.n_tokens
     elif args.stats:
         with open(args.stats, 'r', encoding='utf8') as f_in:
-            args = dict((key, value) for (key, value) in [line.split(":")[:2] for line in f_in.readlines()])
-            n_train_tokens = args.get("n_tokens")
+            d = dict((key, value) for (key, value) in [line.split(":")[:2] for line in f_in.readlines()])
+            n_train_tokens = d.get("n_tokens")
     else:
         raise ValueError("Missing token number!")
 
@@ -79,11 +76,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--use_gpus', help='The number of gpus to use', type=int, default=2)
     parser.add_argument('--epochs', help='The number of epochs to run', type=int, default=10)
-    parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=128)
-
-    parser.add_argument('--pre_process', help='The corpus to pre-process.')
-    parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
-    parser.add_argument('--min_count', help='The minimal count for a vocabulary item.', type=int, default=5)
+    parser.add_argument('--batchsize', help='The batchsize for each gpu', type=int, default=1)
 
     args = parser.parse_args()
     main(args)

@@ -14,7 +14,7 @@ def blocks(files, size=65536):
         yield b
 
 
-def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, n_slices=100, min_count=5):
+def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, min_count, n_slices=100):
     corpus_path, corpus_path = os.path.split(train_corpus)
     train_path, train_name = os.path.split(train_prefix)
     heldout_path, heldout_name = os.path.split(heldout_prefix)
@@ -68,18 +68,16 @@ def pre_process(train_corpus, train_prefix, vocab_file, heldout_prefix, n_slices
     curr_file.close()
     del curr_buffer
 
-    n_vocab = write_vocab(freq, min_count, vocab_file)
+    write_vocab(freq, min_count, vocab_file)
 
     gen_heldout(heldout_path, heldout_name, train_name)
 
     print("Writings stats..")
     with open(train_corpus + ".stat", 'w', encoding='utf8') as f_out:
         f_out.write("n_tokens:" + str(n_tokens) + "\n")
-        f_out.write("n_vocab:" + str(n_vocab) + "\n")
 
     print("n_lines:" + str(n_lines))
     print("n_tokens:" + str(n_tokens))
-    print("n_vocab:" + str(n_vocab))
 
     del freq
 
@@ -119,17 +117,17 @@ def gen_heldout(heldout_path, heldout_name, train_name):
 
 
 def write_vocab(freq, min_count, vocab_file):
-    print("Writing vocabulary..")
-    n_vocab = np.ulonglong(0)
-    with open(vocab_file, 'w', encoding='utf8') as f_out:
-        f_out.write("<S>\n")
-        f_out.write("</S>\n")
-        f_out.write("<UNK>\n")
-        for token, count in tqdm(sorted(freq.items(), key=operator.itemgetter(1), reverse=True)):
-            if count >= min_count:
-                f_out.write(token + '\n')
-                n_vocab += 1
-    return n_vocab
+    for min in min_count:
+        print("Writing vocabulary with min count " + str(min) + "..")
+        n_vocab = np.ulonglong(0)
+        with open(vocab_file + "." + str(min) + ".vocab", 'w', encoding='utf8') as f_out:
+            f_out.write("<S>\n")
+            f_out.write("</S>\n")
+            f_out.write("<UNK>\n")
+            for token, count in tqdm(sorted(freq.items(), key=operator.itemgetter(1), reverse=True)):
+                if count >= min:
+                    f_out.write(token + '\n')
+                    n_vocab += 1
 
 
 def count_occurrences(freq, tokens):
@@ -144,7 +142,7 @@ def count_occurrences(freq, tokens):
     return count
 
 
-def gen_vocab(corpus_file, vocab_file, min_count=5):
+def gen_vocab(corpus_file, vocab_file, min_count):
     # Source: https://stackoverflow.com/a/9631635
     n_lines = count_lines(corpus_file)
 
@@ -168,9 +166,9 @@ def count_lines(corpus_file):
 
 def main(args):
     if args.pre_process:
-        pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix, args.min_count)
+        pre_process(args.pre_process, args.train_prefix, args.vocab_file, args.heldout_prefix, args.min_counts.union({args.min_count}))
     elif args.gen_vocab:
-        gen_vocab(args.gen_vocab, args.vocab_file, args.min_count)
+        gen_vocab(args.gen_vocab, args.vocab_file, args.min_counts.union({args.min_count}))
     elif args.gen_heldout:
         gen_heldout(os.path.split(args.heldout_prefix)[0], os.path.split(args.heldout_prefix)[1],
                     os.path.split(args.train_prefix)[1])
@@ -178,13 +176,14 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pre_process', help='The corpus to pre-process.')
-    parser.add_argument('--gen_vocab', help='Only generate the vocabulary of this corpus, no training data.')
-    parser.add_argument('--gen_heldout', help='Only generate the heldout of a given training slice.')
+    parser.add_argument('--pre_process', help='The corpus to pre-process')
+    parser.add_argument('--gen_vocab', help='Only generate the vocabulary of this corpus, no training data')
+    parser.add_argument('--gen_heldout', help='Only generate the heldout of a given training slice')
     parser.add_argument('--train_prefix', help='Prefix for train files')
-    parser.add_argument('--vocab_file', help='Vocabulary file')
-    parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files.')
-    parser.add_argument('--min_count', help='The minimal count for a vocabulary item.', type=int, default=5)
+    parser.add_argument('--vocab_file', help='Vocabulary file prefix')
+    parser.add_argument('--heldout_prefix', help='The path and prefix for heldout files')
+    parser.add_argument('--min_count', help='The minimal count for a vocabulary item', type=int, default=5)
+    parser.add_argument('--min_counts', help='A list of minimal counts, create a vocab for each. The number is appended to each file name', type=set, nargs='+', default=[5])
 
     args = parser.parse_args()
     main(args)

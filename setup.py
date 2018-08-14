@@ -2,8 +2,8 @@
 import setuptools
 
 setuptools.setup(
-    name='bilm',
-    version='0.1',
+    name='bilm-n-gpus',
+    version='0.3',
     url='http://github.com/allenai/bilm-tf',
     packages=setuptools.find_packages(),
     tests_require=[],
