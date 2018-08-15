@@ -37,7 +37,7 @@ class PreProcessor:
         heldout_path = path.join(output_path, corpus_name + ".heldout")
         train_prefix = path.join(train_path, "training." + corpus_name)
         heldout_part_name = path.join(heldout_path, "training." + corpus_name + ".0")
-        heldout_prefix = path.join(train_path, "heldout." + corpus_name)
+        heldout_prefix = path.join(heldout_path, "heldout." + corpus_name)
 
         for directory in [output_path, train_path, heldout_path]:
             try:
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     parser.add_argument('--pre_process', help='Pre-process flag. Uses -o, -c, -v and -s.', action='store_true')
     parser.add_argument('--gen_vocab', help='Vocabulary generation only flag. Uses -o, -c, -v and -s.', action='store_true')
 
-    parser.add_argument('-o', '--output_path', help='Output path. Subdirectories for training and heldout and other output files will be created here.', required=True)
+    parser.add_argument('-o', '--output_path', help='Output path. Subdirectories for training and heldout and other output files will be created here.')
     parser.add_argument('-c', '--corpus', help='The corpus to pre-process.')
     parser.add_argument('-v', '--vocab_file', help='Vocabulary file name prefix.')
     parser.add_argument('-s', '--stat_file', help='Corpus statistics file name.')
