@@ -33,8 +33,8 @@ class PreProcessor:
         n_slices = self.options.get("n_slices", 100)
         min_count = self.options.get("min_count", {5})
 
-        train_path = path.join(output_path, corpus_name + ".training/")
-        heldout_path = path.join(output_path, corpus_name + ".heldout/")
+        train_path = path.join(output_path, corpus_name + ".training")
+        heldout_path = path.join(output_path, corpus_name + ".heldout")
         train_prefix = path.join(train_path, "training." + corpus_name)
         heldout_part_name = path.join(heldout_path, "training." + corpus_name + ".0")
         heldout_prefix = path.join(heldout_path, "heldout." + corpus_name)
@@ -86,14 +86,14 @@ class PreProcessor:
         with open(stat_file, 'w', encoding='utf8') as f_out:
             f_out.write("n_tokens:" + str(n_tokens) + "\n")
 
-        self.write_vocab(freq, min_count, vocab_file)
-
-        self.process_heldout(heldout_prefix, heldout_part_name)
-
         print("n_lines:" + str(n_lines))
         print("n_tokens:" + str(n_tokens))
 
+        self.write_vocab(freq, min_count, vocab_file)
+
         del freq
+
+        self.process_heldout(heldout_part_name, heldout_prefix)
 
         print("Finished pre-processing.")
         return n_tokens
