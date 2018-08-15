@@ -208,7 +208,7 @@ def main(args):
         pre_processor.pre_process()
     elif args.gen_vocab:
         pre_processor.gen_vocab()
-    elif args.process_heldout:
+    elif args.gen_heldout:
         pre_processor.gen_heldout()
 
 
