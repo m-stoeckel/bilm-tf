@@ -600,7 +600,7 @@ class BidirectionalLanguageModelGraph(object):
         self.update_state_op = tf.group(*update_ops)
 
 
-def dump_token_embeddings(vocab_file, options_file, weight_file, outfile, outtype='hdf5', precision=6):
+def dump_token_embeddings(vocab_file, options_file, weight_file, outfile, outtype, precision=6):
     '''
     Given an input vocabulary file, dump all the token embeddings to the
     outfile.  The result can be used as the embedding_weight_file when
