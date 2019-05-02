@@ -1,11 +1,12 @@
-
 import numpy as np
 import tensorflow as tf
 import h5py
 import json
 import re
 
-from .data import UnicodeCharsVocabulary, Batcher
+from tqdm import tqdm, trange
+
+from .data import UnicodeCharsVocabulary, Batcher, InvalidNumberOfCharacters
 
 DTYPE = 'float32'
 DTYPE_INT = 'int64'
@@ -19,7 +20,7 @@ class BidirectionalLanguageModel(object):
             use_character_inputs=True,
             embedding_weight_file=None,
             max_batch_size=128,
-        ):
+    ):
         '''
         Creates the language model computational graph and loads weights
 
@@ -136,7 +137,7 @@ class BidirectionalLanguageModel(object):
             for layer in layers:
                 layer_wo_bos_eos = layer[:, 1:, :]
                 layer_wo_bos_eos = tf.reverse_sequence(
-                    layer_wo_bos_eos, 
+                    layer_wo_bos_eos,
                     lm_graph.sequence_lengths - 1,
                     seq_axis=1,
                     batch_axis=0,
@@ -176,7 +177,7 @@ class BidirectionalLanguageModel(object):
             mask_wo_bos_eos = tf.cast(mask_wo_bos_eos, 'bool')
 
         return {
-            'lm_embeddings': lm_embeddings, 
+            'lm_embeddings': lm_embeddings,
             'lengths': sequence_length_wo_bos_eos,
             'token_embeddings': lm_graph.embedding,
             'mask': mask_wo_bos_eos,
@@ -247,6 +248,7 @@ class BidirectionalLanguageModelGraph(object):
     Creates the computational graph and holds the ops necessary for runnint
     a bidirectional language model
     '''
+
     def __init__(self, options, weight_file, ids_placeholder,
                  use_character_inputs=True, embedding_weight_file=None,
                  max_batch_size=128):
@@ -331,13 +333,13 @@ class BidirectionalLanguageModelGraph(object):
         # the character embeddings
         with tf.device("/cpu:0"):
             self.embedding_weights = tf.get_variable(
-                    "char_embed", [n_chars, char_embed_dim],
-                    dtype=DTYPE,
-                    initializer=tf.random_uniform_initializer(-1.0, 1.0)
+                "char_embed", [n_chars, char_embed_dim],
+                dtype=DTYPE,
+                initializer=tf.random_uniform_initializer(-1.0, 1.0)
             )
             # shape (batch_size, unroll_steps, max_chars, embed_dim)
             self.char_embedding = tf.nn.embedding_lookup(self.embedding_weights,
-                                                    self.ids_placeholder)
+                                                         self.ids_placeholder)
 
         # the convolutions
         def make_convolutions(inp):
@@ -347,10 +349,10 @@ class BidirectionalLanguageModelGraph(object):
                     if cnn_options['activation'] == 'relu':
                         # He initialization for ReLU activation
                         # with char embeddings init between -1 and 1
-                        #w_init = tf.random_normal_initializer(
+                        # w_init = tf.random_normal_initializer(
                         #    mean=0.0,
                         #    stddev=np.sqrt(2.0 / (width * char_embed_dim))
-                        #)
+                        # )
 
                         # Kim et al 2015, +/- 0.05
                         w_init = tf.random_uniform_initializer(
@@ -371,13 +373,13 @@ class BidirectionalLanguageModelGraph(object):
                         initializer=tf.constant_initializer(0.0))
 
                     conv = tf.nn.conv2d(
-                            inp, w,
-                            strides=[1, 1, 1, 1],
-                            padding="VALID") + b
+                        inp, w,
+                        strides=[1, 1, 1, 1],
+                        padding="VALID") + b
                     # now max pool
                     conv = tf.nn.max_pool(
-                            conv, [1, 1, max_chars-width+1, 1],
-                            [1, 1, 1, 1], 'VALID')
+                        conv, [1, 1, max_chars - width + 1, 1],
+                        [1, 1, 1, 1], 'VALID')
 
                     # activation
                     conv = activation(conv)
@@ -403,15 +405,15 @@ class BidirectionalLanguageModelGraph(object):
         if use_proj:
             assert n_filters > projection_dim
             with tf.variable_scope('CNN_proj') as scope:
-                    W_proj_cnn = tf.get_variable(
-                        "W_proj", [n_filters, projection_dim],
-                        initializer=tf.random_normal_initializer(
-                            mean=0.0, stddev=np.sqrt(1.0 / n_filters)),
-                        dtype=DTYPE)
-                    b_proj_cnn = tf.get_variable(
-                        "b_proj", [projection_dim],
-                        initializer=tf.constant_initializer(0.0),
-                        dtype=DTYPE)
+                W_proj_cnn = tf.get_variable(
+                    "W_proj", [n_filters, projection_dim],
+                    initializer=tf.random_normal_initializer(
+                        mean=0.0, stddev=np.sqrt(1.0 / n_filters)),
+                    dtype=DTYPE)
+                b_proj_cnn = tf.get_variable(
+                    "b_proj", [projection_dim],
+                    initializer=tf.constant_initializer(0.0),
+                    dtype=DTYPE)
 
         # apply highways layers
         def high(x, ww_carry, bb_carry, ww_tr, bb_tr):
@@ -459,7 +461,6 @@ class BidirectionalLanguageModelGraph(object):
         # at last assign attributes for remainder of the model
         self.embedding = embedding
 
-
     def _build_word_embeddings(self):
         projection_dim = self.options['lstm']['projection_dim']
 
@@ -470,8 +471,7 @@ class BidirectionalLanguageModelGraph(object):
                 dtype=DTYPE,
             )
             self.embedding = tf.nn.embedding_lookup(self.embedding_weights,
-                                                self.ids_placeholder)
-
+                                                    self.ids_placeholder)
 
     def _build_lstms(self):
         # now the LSTMs
@@ -524,8 +524,8 @@ class BidirectionalLanguageModelGraph(object):
                         cell_clip=cell_clip, proj_clip=proj_clip)
                 else:
                     lstm_cell = tf.nn.rnn_cell.LSTMCell(
-                            lstm_dim,
-                            cell_clip=cell_clip, proj_clip=proj_clip)
+                        lstm_dim,
+                        cell_clip=cell_clip, proj_clip=proj_clip)
 
                 if use_skip_connections:
                     # ResidualWrapper adds inputs to outputs
@@ -592,7 +592,7 @@ class BidirectionalLanguageModelGraph(object):
                              init_states[i][batch_size:, :]], axis=0)
                         state_update_op = tf.assign(init_states[i], new_state)
                         update_ops.append(state_update_op)
-    
+
                 layer_input = layer_output
 
         self.mask = mask
@@ -600,7 +600,7 @@ class BidirectionalLanguageModelGraph(object):
         self.update_state_op = tf.group(*update_ops)
 
 
-def dump_token_embeddings(vocab_file, options_file, weight_file, outfile):
+def dump_token_embeddings(vocab_file, options_file, weight_file, outfile, outtype='hdf5', precision=6):
     '''
     Given an input vocabulary file, dump all the token embeddings to the
     outfile.  The result can be used as the embedding_weight_file when
@@ -610,12 +610,14 @@ def dump_token_embeddings(vocab_file, options_file, weight_file, outfile):
         options = json.load(fin)
     max_word_length = options['char_cnn']['max_characters_per_token']
 
+    print("Loading vocabulary..")
     vocab = UnicodeCharsVocabulary(vocab_file, max_word_length)
     batcher = Batcher(vocab_file, max_word_length)
 
     ids_placeholder = tf.placeholder('int32',
                                      shape=(None, None, max_word_length)
-    )
+                                     )
+    print("Loading model..")
     model = BidirectionalLanguageModel(options_file, weight_file)
     embedding_op = model(ids_placeholder)['token_embeddings']
 
@@ -625,9 +627,10 @@ def dump_token_embeddings(vocab_file, options_file, weight_file, outfile):
     embeddings = np.zeros((n_tokens, embed_dim), dtype=DTYPE)
 
     config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
         sess.run(tf.global_variables_initializer())
-        for k in range(n_tokens):
+        for k in trange(n_tokens, desc='Creating token embeddings'):
             token = vocab.id_to_word(k)
             char_ids = batcher.batch_sentences([[token]])[0, 1, :].reshape(
                 1, 1, -1)
@@ -635,10 +638,20 @@ def dump_token_embeddings(vocab_file, options_file, weight_file, outfile):
                 embedding_op, feed_dict={ids_placeholder: char_ids}
             )
 
-    with h5py.File(outfile, 'w') as fout:
-        ds = fout.create_dataset(
-            'embedding', embeddings.shape, dtype='float32', data=embeddings
-        )
+    if outtype == 'vec':
+        print("Dumping embeddings in word2vec format")
+        with open(outfile, 'w', encoding='utf-8') as fout:
+            for k in trange(n_tokens, desc='Printing embeddings'):
+                token = vocab.id_to_word(k)
+                emb = embeddings[k]
+                fout.write("%s %s\n" % (token, " ".join(map(lambda x: "%0.6f" % x, emb))))
+    elif outtype == 'hdf5':
+        print("Dumping embeddings in hdf5 format")
+        with h5py.File(outfile, 'w') as fout:
+            ds = fout.create_dataset(
+                'embedding', embeddings.shape, dtype='float32', data=embeddings
+            )
+
 
 def dump_bilm_embeddings(vocab_file, dataset_file, options_file,
                          weight_file, outfile):
@@ -651,7 +664,7 @@ def dump_bilm_embeddings(vocab_file, dataset_file, options_file,
 
     ids_placeholder = tf.placeholder('int32',
                                      shape=(None, None, max_word_length)
-    )
+                                     )
     model = BidirectionalLanguageModel(options_file, weight_file)
     ops = model(ids_placeholder)
 
@@ -673,4 +686,3 @@ def dump_bilm_embeddings(vocab_file, dataset_file, options_file,
                 )
 
                 sentence_id += 1
-

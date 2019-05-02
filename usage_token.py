@@ -38,6 +38,7 @@ weight_file = os.path.join(datadir, 'lm_weights.hdf5')
 
 # Dump the token embeddings to a file. Run this once for your dataset.
 token_embedding_file = 'elmo_token_embeddings.hdf5'
+# token_embedding_file = 'elmo_token_embeddings.vec'
 dump_token_embeddings(
     vocab_file, options_file, weight_file, token_embedding_file
 )

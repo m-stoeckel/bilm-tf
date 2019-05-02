@@ -376,7 +376,7 @@ class LMDataset(object):
         Returns:
             list of (id, char_id) tuples.
         """
-        print('Loading data from: %s' % shard_name)
+        # print('Loading data from: %s' % shard_name)
         with open(shard_name) as f:
             sentences_raw = f.readlines()
 
@@ -400,8 +400,8 @@ class LMDataset(object):
         else:
             chars_ids = [None] * len(ids)
 
-        print('Loaded %d sentences.' % len(ids))
-        print('Finished loading')
+        # print('Loaded %d sentences.' % len(ids))
+        # print('Finished loading')
         return list(zip(ids, chars_ids))
 
     def get_sentence(self):
