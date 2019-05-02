@@ -5,8 +5,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='bilm',
-    version='0.1.post5',
+    name='bilm-n-gpus',
+    version='0.3',
     url='http://github.com/allenai/bilm-tf',
     packages=setuptools.find_packages(),
     tests_require=[],
@@ -21,7 +21,7 @@ setuptools.setup(
         'h5py',
     ],
     classifiers=[
-        'License :: OSI Approved :: Apache Software License',  
+        'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Intended Audience :: Developers',
         'Intended Audience :: Education',

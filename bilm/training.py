@@ -675,6 +675,7 @@ def _get_feed_dict_from_X(X, start, end, model, char_inputs, bidirectional):
 def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
           restart_ckpt_file=None):
 
+    print("Beginning training with %s GPUs.." % n_gpus)
     # not restarting so save the options
     if restart_ckpt_file is None:
         with open(os.path.join(tf_save_dir, 'options.json'), 'w') as fout:
@@ -690,6 +691,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
         opt = tf.train.AdagradOptimizer(learning_rate=lr,
                                         initial_accumulator_value=1.0)
 
+        print("Calculating gradients..")
         # calculate the gradients on each GPU
         tower_grads = []
         models = []
@@ -716,6 +718,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
 
         print_variable_summary()
 
+        print("Calculating mean gradient..")
         # calculate the mean of each gradient across all GPUs
         grads = average_gradients(tower_grads, options['batch_size'], options)
         grads, norm_summary_ops = clip_grads(grads, options, True, global_step)
@@ -760,7 +763,9 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
 
         init = tf.initialize_all_variables()
 
+    print("Beginning training loop..")
     # do the training loop
+    # TODO: try allow_growth
     bidirectional = options.get('bidirectional', False)
     with tf.Session(config=tf.ConfigProto(
             allow_soft_placement=True)) as sess:
@@ -784,7 +789,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
 
         batch_size = options['batch_size']
         unroll_steps = options['unroll_steps']
-        n_train_tokens = options.get('n_train_tokens', 768648884)
+        n_train_tokens = options['n_train_tokens']
         n_tokens_per_batch = batch_size * unroll_steps * n_gpus
         n_batches_per_epoch = int(n_train_tokens / n_tokens_per_batch)
         n_batches_total = options['n_epochs'] * n_batches_per_epoch
